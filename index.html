@@ -11939,11 +11939,26 @@ const APP_BASE = (() => {
 })();
 const evChartName = r => (r && r.part && r.page ? `p${r.part}-${r.page}.webp` : null);
 const evChartSrc = r => { const n = evChartName(r); return n ? `${APP_BASE}charts/${n}` : null; };
-/** One address. A tile that misses says so and takes itself out of the way. */
+/* Twice I tried to hide a notice that was already in the page, and twice
+   something beat me to it — first an inline display, then whatever was
+   left. The mistake was having it there at all. Nothing is rendered until
+   an image actually fails, and then the notice is created in its place. A
+   thing that does not exist cannot be shown by accident. */
+window.agChartMissed = function (img, label) {
+  const fig = img.closest('figure');
+  const note = document.createElement('div');
+  note.className = 'tiny dim';
+  note.style.cssText = 'aspect-ratio:2.05/1;display:flex;align-items:center;justify-content:center;'
+    + 'text-align:center;background:var(--sunk);border-radius:3px;padding:8px';
+  note.textContent = `no image \u2014 ${label}`;
+  (fig ?? img.parentNode)?.insertBefore(note, img);
+  img.remove();
+};
+/** One address, and a notice only if it is not there. */
 const evChartFallback = r => {
   const n = evChartName(r);
   if (!n) return '';
-  return `onerror="this.closest('figure')?.querySelector('.chart-missing')?.removeAttribute('hidden');this.remove();"`;
+  return `onerror="window.agChartMissed(this,'charts/${n}')"`;
 };
 
 /* One probe, cached: is the folder there. Asking per image would mean six
@@ -12144,9 +12159,6 @@ function evidencePanel(el, s) {
         <span class="dim">If the image folder is not deployed, each tile says which slide of the study it is.</span></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">
         ${near.filter(r => evChartSrc(r)).map(r => `<figure style="margin:0">
-          <div class="chart-missing tiny dim" hidden
-               style="padding:18px;text-align:center;background:var(--sunk);border-radius:3px">
-            no image \u2014 Part ${r.part}, slide ${r.page}</div>
           <img loading="lazy" src="${esc(evChartSrc(r))}" alt=""
                style="width:100%;aspect-ratio:2.05/1;object-fit:contain;border-radius:3px;display:block;background:var(--sunk)"
                ${evChartFallback(r)}>
@@ -14274,10 +14286,6 @@ async function Library(root, nav) {
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
             ${slice.map(r => `<figure style="margin:0">
-              <div class="chart-missing tiny dim" hidden
-                 style="aspect-ratio:2.05/1;display:flex;align-items:center;justify-content:center;
-                        text-align:center;background:var(--sunk);border-radius:3px">
-              no image \u2014 charts/p${r.part}-${r.page}.webp</div>
             <img loading="lazy" src="${esc(evChartSrc(r))}" alt=""
                  style="width:100%;aspect-ratio:2.05/1;object-fit:contain;border-radius:3px;display:block;background:var(--sunk);cursor:zoom-in"
                  onclick="window.open(this.src,'_blank')"
