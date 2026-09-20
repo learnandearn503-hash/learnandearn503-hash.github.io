@@ -11939,7 +11939,11 @@ const evChartFallback = r => {
   const n = evChartName(r);
   if (!n) return '';
   return `onerror="if(this.dataset.t!=='1'){this.dataset.t='1';this.src='${APP_BASE}${n}';}`
-    + `else{this.closest('figure').querySelector('.chart-missing')?.removeAttribute('hidden');this.remove();}"`;
+    + `else{this.closest('figure').querySelector('.chart-missing')?.removeAttribute('hidden');this.remove();}" `
+    /* And the other half of the pair: a chart that arrives on the second
+       attempt has to take the placeholder back down. Without this the tile
+       showed the apology and the chart at the same time. */
+    + `onload="this.closest('figure')?.querySelector('.chart-missing')?.setAttribute('hidden','');"`;
 };
 
 /* One probe, cached: is the folder there. Asking per image would mean six
