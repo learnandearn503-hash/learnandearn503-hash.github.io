@@ -11934,16 +11934,11 @@ const APP_BASE = (() => {
 })();
 const evChartName = r => (r && r.part && r.page ? `p${r.part}-${r.page}.webp` : null);
 const evChartSrc = r => { const n = evChartName(r); return n ? `${APP_BASE}charts/${n}` : null; };
-/** Inline fallback: try the folder, then beside this file, then give up. */
+/** One address. A tile that misses says so and takes itself out of the way. */
 const evChartFallback = r => {
   const n = evChartName(r);
   if (!n) return '';
-  return `onerror="if(this.dataset.t!=='1'){this.dataset.t='1';this.src='${APP_BASE}${n}';}`
-    + `else{this.closest('figure').querySelector('.chart-missing')?.removeAttribute('hidden');this.remove();}" `
-    /* And the other half of the pair: a chart that arrives on the second
-       attempt has to take the placeholder back down. Without this the tile
-       showed the apology and the chart at the same time. */
-    + `onload="this.closest('figure')?.querySelector('.chart-missing')?.setAttribute('hidden','');"`;
+  return `onerror="this.closest('figure')?.querySelector('.chart-missing')?.removeAttribute('hidden');this.remove();"`;
 };
 
 /* One probe, cached: is the folder there. Asking per image would mean six
@@ -14277,7 +14272,7 @@ async function Library(root, nav) {
               <div class="chart-missing tiny dim" hidden
                  style="aspect-ratio:2.05/1;display:flex;align-items:center;justify-content:center;
                         text-align:center;background:var(--sunk);border-radius:3px">
-              no image \u2014 part ${r.part} of the dataset was not uploaded</div>
+              no image \u2014 charts/p${r.part}-${r.page}.webp</div>
             <img loading="lazy" src="${esc(evChartSrc(r))}" alt=""
                  style="width:100%;aspect-ratio:2.05/1;object-fit:contain;border-radius:3px;display:block;background:var(--sunk);cursor:zoom-in"
                  onclick="window.open(this.src,'_blank')"
@@ -14317,8 +14312,8 @@ async function Library(root, nav) {
       const out = root.querySelector('#lib-diag-out');
       const ref = slice[0] ?? evidence.parse().bo.find(r => r.part && r.page);
       const name = evChartName(ref);
-      const tries = [`${APP_BASE}charts/${name}`, `${APP_BASE}${name}`];
-      out.innerHTML = '<span class="spin"></span>asking for one image both ways\u2026';
+      const tries = [`${APP_BASE}charts/${name}`];
+      out.innerHTML = '<span class="spin"></span>asking for one image\u2026';
       const lines = [];
       for (const rel of tries) {
         const abs = new URL(rel, document.baseURI).href;
@@ -14340,9 +14335,9 @@ async function Library(root, nav) {
         <div class="tiny mute" style="margin-top:8px">
           This page is <code>${esc(location.href)}</code>; this file is deployed at
           <code>${esc(location.origin + APP_BASE)}</code>, which is what the addresses above are built from.
-          If one of the two rows above came back green, the images are reachable and the fault is in this app —
-          tell me which row. If both are red, the file is not at either address on this deployment, whatever the
-          repository shows.
+          Green means the images are reachable and the Library will show them. Red means the file is not at that
+          address on this deployment, whatever the repository shows \u2014 the folder has to be called
+          <code>charts</code>, in lower case, beside <code>index.html</code>.
         </div>`;
     };
   };
